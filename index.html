@@ -1,11 +1,28 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha512-XMVd28F1oH/O71fzwBnV7HucLxVwtxf26XV8P4wPk26EDxuGZ91N8bsOttmnomcCD3CS5ZMRL50H0GgOHvegtg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/css/bootstrap.min.css" integrity="sha512-SbiR/eusphKoMVVXysTKG/7VseWii+Y3FdHrt0EpKgpToZeemhqHeZeLWLhJutz/2ut2Vw1uQEj2MbRF+TVBUA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+        <title>Generate 0x0.zip</title>
     </head>
     <body>
-        <input type="number" id="length" min="1" value="1000">
-        <button onclick="generateZip()">Generate Zip</button>
+        <div class="container">
+            <div class="py-5 text-center">
+                <h1>Generate 0x0.zip</h1>
+                <p class="lead">Generate a 0x0.zip file with a custom length.</p>
+            </div>
+            <div class="row g-5">
+                <form>
+                    <div class="mb-3">
+                        <label for="length" class="form-label">Length</label>
+                        <input type="number" class="form-control" id="length" min="1" value="1000"/>
+                    </div>
+                    <div class="mb-3">
+                        <button class="w-100 btn btn-primary btn-lg" onclick="generateZip()">Generate Zip</button>
+                    </div>
+                </form>
+            </div>
+        </div>
 
         <script>
             function generateZip() {
@@ -25,6 +42,23 @@
                     link.click();
                 });
             }
+            window.onload = function() {
+                // parse query string
+                var query = window.location.search.substring(1);
+                var vars = query.split("&");
+                var direct_generate = false;
+                for (var i=0;i<vars.length;i++) {
+                    var pair = vars[i].split("=");
+                    if(pair[0] == 'length'){
+                        document.getElementById('length').value = pair[1];
+                        direct_generate = true;
+                    }
+                }
+                if(direct_generate){
+                    generateZip();
+                }
+            }
         </script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/js/bootstrap.min.js" integrity="sha512-1/RvZTcCDEUjY/CypiMz+iqqtaoQfAITmNSJY17Myp4Ms5mdxPS5UV7iOfdZoxcGhzFbOm6sntTKJppjvuhg4g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     </body>
 </html>
