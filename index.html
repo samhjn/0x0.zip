@@ -3,13 +3,15 @@
     <head>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha512-XMVd28F1oH/O71fzwBnV7HucLxVwtxf26XV8P4wPk26EDxuGZ91N8bsOttmnomcCD3CS5ZMRL50H0GgOHvegtg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/css/bootstrap.min.css" integrity="sha512-SbiR/eusphKoMVVXysTKG/7VseWii+Y3FdHrt0EpKgpToZeemhqHeZeLWLhJutz/2ut2Vw1uQEj2MbRF+TVBUA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-        <title>Generate 0x0.zip</title>
+        <title>0x0.zip - Zip with binary data</title>
+        <meta name="keywords" content="binary with pattern, zip, random binary"/>
+        <meta name="description" content="Generate a zipped binary file with a custom length and pattern(full 0x0, full 0xff, etc.) or random content."/>
     </head>
     <body>
         <div class="container">
             <div class="py-5 text-center">
-                <h1>Generate 0x0.zip</h1>
-                <p class="lead">Generate a zipped full zero file with a custom length.</p>
+                <h1>Generate Zip with Custom Binary Data</h1>
+                <p class="lead">Generate a zipped binary file with a custom length and pattern(full zero, full 0xff, etc.) or random content.</p>
             </div>
             <div class="row g-5">
                 <div>
@@ -18,42 +20,116 @@
                         <input type="number" class="form-control" id="length" min="1" value="1000"/>
                     </div>
                     <div class="mb-3">
+                        <div>
+                            <input type="radio" id="patternOption" name="dataOption" value="pattern" checked onclick="toggleInput()">
+                            <label for="patternOption">Pattern</label>
+                        </div>
+                        <div>
+                            <input type="radio" id="randomOption" name="dataOption" value="random" onclick="toggleInput()">
+                            <label for="randomOption">Random</label>
+                        </div>
+                    </div>
+                    <div class="mb-3" id="patternInput">
+                        <label for="pattern" class="form-label">Pattern (hex string)</label>
+                        <input type="text" class="form-control" id="pattern" value="00"/>
+                    </div>
+                    <div class="mb-3">
                         <button class="w-100 btn btn-primary btn-lg" onclick="generateZip()">Generate Zip</button>
                     </div>
+                    <div id="error-message" class="text-danger" style="display: none;"></div>
                 </div>
             </div>
         </div>
 
         <script>
+            function toggleInput() {
+                var patternInput = document.getElementById('patternInput');
+                var patternOption = document.getElementById('patternOption').checked;
+                if (patternOption) {
+                    patternInput.style.display = 'block';
+                } else {
+                    patternInput.style.display = 'none';
+                }
+            }
+
             function generateZip() {
                 var zip = new JSZip();
-                var length = document.getElementById('length').value;
+                var length = parseInt(document.getElementById('length').value);
+                var patternOption = document.getElementById('patternOption').checked;
+                var pattern = document.getElementById('pattern').value;
+                var errorMessage = document.getElementById('error-message');
+                errorMessage.style.display = 'none';
+                errorMessage.innerHTML = '';
+
+                if (isNaN(length) || length < 1) {
+                    errorMessage.innerHTML = 'Invalid length. Please enter a positive integer.';
+                    errorMessage.style.display = 'block';
+                    return;
+                }
 
                 var buffer = new ArrayBuffer(length);
                 var view = new Uint8Array(buffer);
 
-                zip.file("0x0.bin", view, {compression: "DEFLATE"});
+                if (patternOption) {
+                    if (/^[0-9a-fA-F]+$/.test(pattern) && pattern.length % 2 === 0) {
+                        var patternBytes = hexStringToByteArray(pattern);
+                        for (var i = 0; i < length; i++) {
+                            view[i] = patternBytes[i % patternBytes.length];
+                        }
+                    } else {
+                        errorMessage.innerHTML = 'Invalid pattern. Please enter a valid hex string.';
+                        errorMessage.style.display = 'block';
+                        return;
+                    }
+                } else {
+                    for (var i = 0; i < length; i++) {
+                        view[i] = Math.floor(Math.random() * 256);
+                    }
+                }
+
+                zip.file("data.bin", view, {compression: "DEFLATE"});
 
                 zip.generateAsync({type:"blob"})
                 .then(function(content) {
                     var link = document.createElement('a');
                     link.href = window.URL.createObjectURL(content);
-                    link.download = '0x0.zip';
+                    link.download = 'data.zip';
                     link.click();
                 });
             }
+
+            function hexStringToByteArray(hexString) {
+                var result = [];
+                for (var i = 0; i < hexString.length; i += 2) {
+                    result.push(parseInt(hexString.substr(i, 2), 16));
+                }
+                return result;
+            }
+
             window.onload = function() {
-                // parse query string
+                toggleInput();
                 var query = window.location.search.substring(1);
                 var vars = query.split("&");
                 var direct_generate = false;
-                for (var i=0;i<vars.length;i++) {
+                for (var i = 0; i < vars.length; i++) {
                     var pair = vars[i].split("=");
                     if(pair[0] == 'length'){
                         document.getElementById('length').value = pair[1];
                         direct_generate = true;
                     }
+                    if(pair[0] == 'pattern'){
+                        document.getElementById('pattern').value = pair[1];
+                        document.getElementById('patternOption').checked = true;
+                        document.getElementById('randomOption').checked = false;
+                        direct_generate = true;
+                    }
+                    if(pair[0] == 'random' && pair[1] == 'true'){
+                        document.getElementById('randomOption').checked = true;
+                        document.getElementById('patternOption').checked = false;
+                        direct_generate = true;
+                    }
                 }
+                toggleInput();
                 if(direct_generate){
                     generateZip();
                 }
